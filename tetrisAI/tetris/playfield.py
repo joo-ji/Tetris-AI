@@ -7,8 +7,6 @@ class Playfield:
     HEIGHT = 21
     WIDTH = 10
     
-    CLEAR_LEVEL = 9
-    
     def __init__(self):
         self.grid = np.zeros((self.HEIGHT, self.WIDTH))
         self.combo = False
@@ -16,14 +14,17 @@ class Playfield:
  #       self.grid[self.HEIGHT - 10, :] = 1
   #      self.grid[self.HEIGHT - 15, :] = 1
    #     self.grid[self.HEIGHT - 7, :] = 1
-        print("initial playfield:\n", self.grid)
+        #print("initial playfield:\n", self.grid)
+    
+    def print_self(self):
+        print(self.grid)
         
     def spawn_tetromino(self, shape):
         return Tetromino(shape, self.SPAWN_POSITION)
     
     def get_drop_level(self, tetroblock):
         drop_area = self.grid[:, tetroblock.position_state:(tetroblock.position_state + tetroblock.width)]
-        print("drop area: \n", drop_area)
+        #print("drop area: \n", drop_area)
         for i in range(0, self.HEIGHT - tetroblock.height + 1):
             temp_area = drop_area[i:(i + tetroblock.height), :]
             #print("temp area\n", temp_area)
@@ -37,8 +38,9 @@ class Playfield:
 
     def fast_drop(self, tetroblock):
         drop_level = self.get_drop_level(tetroblock)
-        print("current space\n", self.grid[drop_level:(drop_level + tetroblock.height), :][:, tetroblock.position_state:(tetroblock.position_state + tetroblock.width)])
+        #print("current space\n", self.grid[drop_level:(drop_level + tetroblock.height), :][:, tetroblock.position_state:(tetroblock.position_state + tetroblock.width)])
         self.grid[drop_level:(drop_level + tetroblock.height), :][:, tetroblock.position_state:(tetroblock.position_state + tetroblock.width)] += tetroblock.matrix
+        #print(self.grid)
         self.clear_line()
         self.update_block_height()
         
@@ -59,19 +61,22 @@ class Playfield:
     def update_block_height(self):
         self.placed_height = self.grid.argmax(axis = 0)
         self.placed_height[self.placed_height == 0] = self.HEIGHT
+        
         self.relative_height = self.placed_height - np.amax(self.placed_height)
         
-        print("\nplaced height\n", self.placed_height)
+        #print("\nplaced height\n", self.placed_height)
         #self.empty_height = self.grid.argmin(axis = 0)
-        print("relative height\n", self.relative_height)
+        #print("relative height\n", self.relative_height)
         self.empty_height = self.HEIGHT - 1 - np.flip(self.grid, 0).argmin(axis = 0)
-        print("empty height\n", self.empty_height)
         
-        print("\nplayfield\n", self.grid)
+        self.height_diff = np.amax(self.relative_height[0: self.WIDTH - 1]) - np.amin(self.relative_height[0: self.WIDTH - 1])
+        #print("empty height\n", self.empty_height)
         
-    def should_clear(self):
-        return self.combo | np.any(self.placed_height < self.CLEAR_LEVEL)
+        #print("\nplayfield\n", self.grid)
     
+    def should_clear(self, clear_level):
+        return self.combo or np.all(self.placed_height < clear_level)
+        
     def test_time(self):
         print(timeit.timeit(self.update_block_height, number=1000))
         print("efficiency test")
