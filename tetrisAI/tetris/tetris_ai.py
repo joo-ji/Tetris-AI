@@ -28,6 +28,8 @@ class Tetris_AI:
         fit_score = 0
         
         for i in range(0, tetro_block.rotations):
+            #print("rotation state: ", tetro_block.rotation_state)
+            #print("before rotation:\n", tetro_block.matrix)
             
             for i in range(0, tetro_block.positions):
                 test_grid = copy.deepcopy(self.playgrid)
@@ -37,19 +39,20 @@ class Tetris_AI:
                     fit_score = self.evaluate_fitness(test_grid)
                     best_position = tetro_block.position_state
                     best_rotation = tetro_block.rotation_state
-                    
+                
+                #print("position state before shift: ", tetro_block.position_state)
                 tetro_block.shift_right()
             
             tetro_block.rotate_matrix()
         
-        return self.drop_tetromino(tetro_block, best_position, best_rotation)
+        #print("fitness score: ", fit_score)
+        self.drop_tetromino(tetro_block, best_position, best_rotation)
+        return best_position, best_rotation
     
     def drop_tetromino(self, tetro_block, position, rotation):
-        moves = tetro_block.shift_right_to(position)
-        rotations = tetro_block.rotate_matrix_to(rotation)
+        tetro_block.rotate_matrix_to(rotation)
+        tetro_block.shift_right_to(position)
         self.playgrid.fast_drop(tetro_block)
-        
-        return position, moves, rotations
         
     def evaluate_fitness(self, test_grid):
         #print("evaluate holes:", self.evaluate_holes(test_grid))

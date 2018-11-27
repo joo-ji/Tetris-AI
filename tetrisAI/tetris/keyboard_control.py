@@ -33,43 +33,58 @@ key_controller = keyboard.Controller()
 img = ImageGrab.grab(bbox=(739, 292, 754, 307))
 img_np = np.array(img)
 img.save('tetromino_image.png')
-input_tetro = Tetromino(tuple(img_np[14, 14]))
+tetro_color = tuple(img_np[14, 14])
+input_tetro = Tetromino(tetro_color)
 dumb_robot.playgrid.fast_drop(input_tetro)
 dumb_robot.print_self()
+counter = 0
 
-def on_press(key):
-
-    if(key == keyboard.Key.space):
-        print("PLEASE")
-        img = ImageGrab.grab(bbox=(739, 292, 754, 307))
-        img.save('tetromino_image.png')
-        img_np = np.array(img) 
-        input_tetro = Tetromino(tuple(img_np[14, 14]))
-        pos, moves, rots = dumb_robot.run_ai(input_tetro)
-        while(moves > 0):                
-            if(input_tetro.position_state < pos):
-                key_controller.press(keyboard.Key.left)
-                key_controller.release(keyboard.Key.left)
-            else:
-                key_controller.press(keyboard.Key.right)
-                key_controller.release(keyboard.Key.right)
-            #keyboard.press('r')
-            #keyboard.release('r')
-            moves -= 1
+while(True):
+    img = ImageGrab.grab(bbox=(739, 292, 754, 307))
+    img.save('tetromino_image1.png')
+    img_np = np.array(img)
     
-        while(rots > 0):
+    if(tetro_color == tuple(img_np[14, 14]) or tuple(img_np[14, 14]) == (43, 43, 43)):
+        key_controller.press(keyboard.Key.space)
+        time.sleep(0.05)
+        key_controller.release(keyboard.Key.space)
+    
+    else:
+        counter += 1
+        dumb_robot.print_self()
+        #print(counter)
+        tetro_color = tuple(img_np[14, 14])
+        input_tetro = Tetromino(tetro_color)
+        game_tetro = Tetromino(tetro_color)
+        #print(input_tetro.matrix)
+        pos, rots = dumb_robot.run_ai(input_tetro)
+        #need to shift I blocks if rotating
+        while(game_tetro.rotation_state != rots):
+            time.sleep(0.1)
             key_controller.press(keyboard.Key.up)
+            time.sleep(0.04)
             key_controller.release(keyboard.Key.up)
             #keyboard.press('u')
             #keyboard.release('u')
-            rots -= 1
+            game_tetro.rotate_matrix()
         
-        key_controller.press(keyboard.Key.space)
-        key_controller.release(keyboard.Key.space)
-        dumb_robot.print_self()
-    elif(key == keyboard.Key.esc):
-        return False
-
-with keyboard.Listener(
-        on_press = on_press) as listener:
-    listener.join()
+        print(game_tetro.matrix)
+        print("rotation: ", game_tetro.rotation_state)
+        print("desired rotation: ", rots)
+        while(game_tetro.position_state != pos):
+            time.sleep(0.15)
+            if(game_tetro.position_state > pos):
+                key_controller.press(keyboard.Key.left)
+                time.sleep(0.05)
+                key_controller.release(keyboard.Key.left)
+                game_tetro.position_state -= 1
+            else:
+                key_controller.press(keyboard.Key.right)
+                time.sleep(0.05)
+                key_controller.release(keyboard.Key.right)
+                game_tetro.position_state += 1
+            #keyboard.press('r')
+            #keyboard.release('r')
+        print("position: ", game_tetro.position_state)
+        print("desired position: ", pos)
+        

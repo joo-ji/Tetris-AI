@@ -82,29 +82,36 @@ class Tetromino:
         if(self.shape != 'O'):
             self.matrix = np.rot90(self.matrix, 1, (1, 0))
             self.rotation_state = (self.rotation_state + 1) % self.rotations
-            self.height = len(self.matrix)
-            self.width = len(self.matrix[0,:])
-            self.positions = self.BOARD_SIZE - self.width + 1
-    
+            
+            self.update_matrix()
+
     def rotate_matrix_to(self, end_state):
-        rotations = 0
         while(self.rotation_state != end_state):
             self.rotate_matrix()
-            rotations += 1
-            
-        return rotations
         
     def shift_right(self):
         self.position_state = (self.position_state + 1) % self.positions
     
     def shift_right_to(self, end_state):
-        moves = 0
         while(self.position_state != end_state):
             self.shift_right()
-            moves += 1
-            
-        return moves
     
+    def update_matrix(self):
+        self.height = len(self.matrix)
+        self.width = len(self.matrix[0,:])
+        self.positions = self.BOARD_SIZE - self.width + 1
+        
+        if(self.rotation_state == 1):
+            if(self.shape == 'I'):
+                self.position_state += 2
+            else:
+                self.position_state += 1
+        elif(self.rotation_state == 2):
+            if(self.shape == 'I'):
+                self.position_state -= 2
+            else:
+                self.position_state -= 1
+            
     def print_tetromino(self):
         print("\nshape: ", self.shape)
         print("rotation state: ", self.rotation_state)
