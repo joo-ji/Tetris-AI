@@ -1,86 +1,132 @@
 import copy
-import numpy as np
 import timeit
+import math
+import numpy as np
 
 from tetromino import Tetromino
 from playfield import Playfield
 
 class Tetris_AI:
+    
+    CLEAR_LEVEL = 13
+    hold_piece = 0
+    
     def __init__(self):
         self.playgrid = Playfield()
-        #self.playgrid.grid[self.playgrid.HEIGHT - 1, :] = 1
-        self.playgrid.combo = True
-        print("\nai playgrid\n", self.playgrid.grid)
-        test = Tetromino('L')
-        self.playgrid.fast_drop(test)
-    #def calculate_fitness(self):
-        #
     
-    def run_ai(self):
-        test_block = Tetromino('L')
-        
-        best_position = test_block.position_state
-        best_rotation = test_block.rotation_state
-        fit_score = 0
-        
-        for i in range(0, test_block.rotations):
-            
-            for i in range(0, test_block.positions):
-                test_grid = copy.deepcopy(self.playgrid)
-                test_grid.fast_drop(test_block)
+    def hold_Tetromino(self, tetro_color):
+        if(tetro_color == (43, 43, 43)):
+            return False
+        elif(self.hold_piece == 0):
+            self.hold_piece = Tetromino((tetro_color))
+            return True
+        elif(tetro_color != (44, 209, 255) or self.hold_piece.color == (44, 209, 255)):
+            return False
+        else:
+            self.hold_piece = Tetromino((44, 209, 255))
+            return True
+    
+    def run_ai(self, tetro_block, clearing):    
+        if(clearing):
+            best_position = self.playgrid.WIDTH - 1
+            best_rotation = 1
+            fitness_score = 100
+            fit_array = [1, 60, 20, 20]
+            self.drop_tetromino(tetro_block, best_position, best_rotation)
+            return best_position, best_rotation, fitness_score, fit_array
+        else:
+            best_position = tetro_block.position_state
+            best_rotation = tetro_block.rotation_state
+            fitness_score = 0
+            for i in range(0, tetro_block.rotations):
                 
-                if(self.evaluate_fitness(test_grid) > fit_score):
-                    fit_score = self.evaluate_fitness(test_grid)
-                    best_position = test_block.position_state
-                    best_rotation = test_block.rotation_state
+                for i in range(0, tetro_block.positions):
+                    test_grid = copy.deepcopy(self.playgrid)
+                    test_grid.fast_drop(tetro_block)
                     
-                test_block.shift_right()
+                    fitness = self.evaluate_fitness(test_grid)
+                    score =  fitness[0] * (fitness[1] + fitness[2] + fitness[3])
+                    if(score > fitness_score):
+                        fitness_score = score
+                        fit_array = fitness
+                        best_position = tetro_block.position_state
+                        best_rotation = tetro_block.rotation_state
+                    
+                    tetro_block.shift_right()
+                
+                tetro_block.rotate_matrix()
             
-            test_block.rotate_matrix()
-        
-        #print(test_grid)
-        return best_position, best_rotation
+            self.drop_tetromino(tetro_block, best_position, best_rotation)
+            return best_position, best_rotation, fitness_score, fit_array
+    
+    def clear_mode(self, tetro_color):
+        if(np.all(self.playgrid.placed_height[0: self.playgrid.WIDTH - 1] < self.CLEAR_LEVEL) and (tetro_color == self.hold_piece.color == (44, 209, 255))):
+            return True
+        else:
+            return False
+    
+    def drop_tetromino(self, tetro_block, position, rotation):
+        tetro_block.rotate_matrix_to(rotation)
+        tetro_block.shift_right_to(position)
+        self.playgrid.fast_drop(tetro_block)
     
     def evaluate_fitness(self, test_grid):
-        print(self.evaluate_holes(test_grid))
-        return 0
+        #print("evaluate holes:", self.evaluate_holes(test_grid))
+        #print("evaluate height:", self.evaluate_height(test_grid))
+        #print("evaluate height difference:", self.evaluate_height_diff(test_grid))
         
+        clear_factor = self.evaluate_clear_columns(test_grid)
+        #print("clear_factor score: ", clear_factor)
+        holes = 60 * self.evaluate_holes(test_grid)
+        #print("hole score: ", holes)
+        h_level = 20 * self.evaluate_height(test_grid)
+        #print("height level: ", h_level)
+        h_diff = 20 * self.evaluate_height_diff(test_grid)
+        #print("height diff: ", h_diff)
         
+        #total_score = clear_factor * (holes + h_level + h_diff)
+        #print("total score:", total_score)
+        #return total_score
+        return np.array( [clear_factor, holes, h_level, h_diff] );
+    
+    # function to evaluate if the AI should clear or not
     def evaluate_clear_columns(self, test_grid):
-        if(self.playgrid.should_clear()):
-            if(test_grid.combo):
-                return 1
-            return 0.7
+        if(np.all(self.playgrid.placed_height[0: self.playgrid.WIDTH - 1] < self.CLEAR_LEVEL)):
+            return 0.8
         
-        if(test_grid.combo):
+        if(test_grid.relative_height[test_grid.WIDTH - 1: test_grid.WIDTH] != self.playgrid.relative_height[self.playgrid.WIDTH - 1: self.playgrid.WIDTH]):
             return 0.5
         
+        if(test_grid.combo):
+            return 0.6
+        
         return 1
-            #if 1 in self.playgrid.grid[:, self.playgrid.WIDTH - 2]:
-            #    if 1 in self.playgrid.grid[:, self.playgrid.WIDTH - 1]:
-            #        return 1
-            #    else:
-            #        
-            #        return 0.2
-            
-            #return 0.6        
     
+    # function to evaluate if a 'hole' is create
     def evaluate_holes(self, test_grid):
         test_relative_height = test_grid.placed_height - np.amax(test_grid.placed_height)
-        
-        if(np.sum(self.playgrid.relative_height) - np.sum(test_relative_height) == 4):
-            return 1
-        return 0.6
+        spaces_filled = np.sum(self.playgrid.relative_height) - np.sum(test_relative_height)
+        return 4 / spaces_filled
     
     # another function to evaluate holes
     def evaluate_holes_2(self, test_grid):
         if(np.any(np.subtract(test_grid.placed_height, test_grid.empty_height) != 1)):
             return 0.6
-        
         return 1
     
     def evaluate_height(self, test_grid):
-        
+        avg_comparison = (test_grid.placed_height < np.mean(test_grid.placed_height)).sum()
+        return avg_comparison / 10;
+    
+    # function to evaluate the difference in the max and min height
+    def evaluate_height_diff(self, test_grid):
+        height_d = np.amax(test_grid.relative_height[0: test_grid.WIDTH - 1]) - np.amin(test_grid.relative_height[0: test_grid.WIDTH - 1])
+        return (math.ceil(test_grid.HEIGHT / 4) - height_d) / math.ceil(test_grid.HEIGHT / 4)
+    
+    def print_self(self):
+        self.playgrid.print_self()
+    
     def time_test(self):
-        print(timeit.timeit(self.run_ai, number=10))
+        print(timeit.timeit(self.run_ai(Tetromino((255, 156, 35))), number=10))
         print("efficiency test")
+    
