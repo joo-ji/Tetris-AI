@@ -34,7 +34,7 @@ while(time.time() - start_time <= 120):
     tetro_color = controls.capture_tetromino()
     
     if(tetro_color != (43, 43, 43)):
-        if(dumb_robot.hold_Tetromino(tetro_color)):
+        if(dumb_robot.hold_tetromino(tetro_color)):
             controls.hold_controller()
             tetro_color = controls.capture_tetromino()
             
@@ -49,10 +49,13 @@ while(time.time() - start_time <= 120):
             controls.rotation_controller(game_tetro, rotations)
             controls.translation_controller(game_tetro, positions)
             controls.fast_drop_controller()
-            controls.hold_controller()
             
-            input_tetro = Tetromino(tetro_color)
-            game_tetro = Tetromino(tetro_color)
+            time.sleep(0.15)
+            
+            tetro_color = controls.capture_tetromino()
+            dumb_robot.hold_piece = Tetromino(tetro_color)
+            
+            controls.hold_controller()
             
             positions, rotations, fit_score, fit_array = dumb_robot.run_ai(input_tetro, True)
             dumb_robot.print_self()
