@@ -9,11 +9,11 @@ class Playfield:
     
     def __init__(self):
         self.grid = np.zeros((self.HEIGHT, self.WIDTH))
-        self.combo = False
+        self.cleared_lines = 0
         
  #       self.grid[self.HEIGHT - 10, :] = 1
   #      self.grid[self.HEIGHT - 15, :] = 1
-        self.grid[self.HEIGHT - 7, :] = 1
+        #self.grid[self.HEIGHT - 7, :] = 1
         #print("initial playfield:\n", self.grid)
     
     def print_self(self):
@@ -53,9 +53,9 @@ class Playfield:
         if(self.HEIGHT - len(self.grid) > 0):
             new_grid = np.zeros((self.HEIGHT - len(self.grid), self.WIDTH))
             self.grid = np.concatenate((new_grid, self.grid), axis = 0)
-            self.combo = True
+            self.cleared_lines += len(new_grid)
         else:
-            self.combo = False
+            self.cleared_lines = 0
     
     def update_block_height(self):
         #print("\nplayfield\n", self.grid)
