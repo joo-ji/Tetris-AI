@@ -5,10 +5,11 @@ from pynput import keyboard
 from PIL import ImageGrab
 
 def capture_tetromino():
-    img = ImageGrab.grab(bbox=(739, 292, 754, 307))
-    img.save('tetromino_image1.png')
+    #img = ImageGrab.grab(bbox=(739, 320, 754, 335))
+    img = ImageGrab.grab(bbox=(672, 365, 692, 385))
+    img.save('tetromino_image.png')
     img_np = np.array(img)
-    return tuple(img_np[14, 14])
+    return tuple(img_np[10, 10])
 
 key_controller = keyboard.Controller()
 
@@ -32,8 +33,7 @@ def rotation_controller(game_tetro, rotation):
         key_controller.press(keyboard.Key.up)
         time.sleep(0.05)
         key_controller.release(keyboard.Key.up)
-        game_tetro.rotate_matrix()
-    
+        game_tetro.rotate_clockwise()
     return game_tetro
 
 def hold_controller():
